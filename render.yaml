@@ -1,0 +1,15 @@
+yaml
+# MelodyFlow Render Blueprint
+# Free tier: 512MB RAM, shared CPU, no sleep
+services:
+  - type: web
+    name: melodyflow-api
+    region: singapore
+    plan: free
+    branch: main
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: '18'
+      - key: PORT
+        fromGroup: melodyflow-env
