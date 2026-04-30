@@ -1,0 +1,15 @@
+{
+  "name": "melodyflow-server",
+  "version": "2.0.0",
+  "description": "MelodyFlow 统一服务端 - 音乐API + 用户认证",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": ["music", "api", "netease", "melodyflow"],
+  "author": "MelodyFlow",
+  "license": "MIT",
+  "dependencies": {
+    "bcryptjs": "^2.4.3"
+  }
+}
