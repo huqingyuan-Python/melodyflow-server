@@ -1,0 +1,21 @@
+databases:
+  - name: melodyflow-redis
+    plan: free
+    databaseName: melodyflow_db
+    ipAllowList: []
+
+services:
+  - type: web
+    name: melodyflow-api
+    region: singapore
+    plan: free
+    branch: main
+    autoDeploy: true
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: '10000'
+    command: npm start
+    disabledAutoDeploy: false
