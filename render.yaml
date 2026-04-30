@@ -10,6 +10,9 @@ services:
     region: singapore
     plan: free
     branch: main
+    runtime: node
+    buildCommand: npm install
+    startCommand: npm start
     autoDeploy: true
     healthCheckPath: /health
     envVars:
@@ -17,5 +20,3 @@ services:
         value: production
       - key: PORT
         value: '10000'
-    command: npm start
-    disabledAutoDeploy: false
