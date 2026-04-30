@@ -1,6 +1,9 @@
-yaml
-# MelodyFlow Render Blueprint
-# Free tier: 512MB RAM, shared CPU, no sleep
+databases:
+  - name: melodyflow-redis
+    plan: free
+    databaseName: melodyflow_db
+    ipAllowList: []
+
 services:
   - type: web
     name: melodyflow-api
@@ -8,8 +11,9 @@ services:
     plan: free
     branch: main
     autoDeploy: true
+    healthCheckPath: /health
     envVars:
-      - key: NODE_VERSION
-        value: '18'
+      - key: NODE_ENV
+        value: production
       - key: PORT
-        fromGroup: melodyflow-env
+        value: '10000'
