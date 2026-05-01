@@ -950,6 +950,38 @@
       color: var(--text-secondary);
     }
 
+
+    .import-name-input {
+      width: 100%;
+      padding: 6px 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--bg-elevated);
+      color: var(--text-primary);
+      font-size: 14px;
+      outline: none;
+    }
+    .import-name-input:focus { border-color: var(--accent); }
+    .song-card-delete {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      background: rgba(0,0,0,0.7);
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 12px;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+    .song-card-cover { position: relative; }
+    .song-card-cover:hover .song-card-delete { opacity: 1; }
     .import-add-btn {
       padding: 8px 18px;
       border-radius: 20px;
@@ -1313,10 +1345,10 @@
 
     .progress-fill {
       height: 100%;
-      background: var(--text-secondary);
+      background: var(--accent);
       border-radius: 2px;
       position: relative;
-      transition: background 0.15s;
+      transition: background 0.15s, width 0.1s linear;
     }
 
     .progress-thumb {
@@ -2519,7 +2551,7 @@
                   <img v-if="importResult.cover" :src="importResult.cover">
                 </div>
                 <div class="import-result-info">
-                  <h3>{{ importResult.name }}</h3>
+                  <input class="import-name-input" v-model="importPlaylistName" placeholder="输入歌单名称...">
                   <p>{{ importResult.list.length }} 首歌曲 · {{ importResult.platform }}</p>
                 </div>
                 <button class="import-add-btn" @click="addImportedPlaylist">
@@ -2537,6 +2569,9 @@
                 <div class="song-card-cover">
                   <img v-if="pl.cover" :src="pl.cover">
                   <div v-else class="song-card-cover-placeholder"><i class="fas fa-list"></i></div>
+                  <button class="song-card-delete" @click.stop="deletePlaylist(pl.id)" title="删除歌单">
+                    <i class="fas fa-trash-can"></i>
+                  </button>
                 </div>
                 <div class="song-card-name">{{ pl.name }}</div>
                 <div class="song-card-desc">{{ pl.songs.length }} 首歌曲</div>
@@ -2644,7 +2679,14 @@
       </div>
       <div class="progress-wrap">
         <span class="time-label">{{ formatTime(currentTime) }}</span>
-        <div class="progress-bar" @click="seekTo">
+        <div class="progress-bar"
+             @mousedown="startSeek"
+             @touchstart="startSeek"
+             @mousemove="onSeekMove"
+             @touchmove="onSeekMove"
+             @mouseup="endSeek"
+             @touchend="endSeek"
+             @mouseleave="endSeek">
           <div class="progress-fill" :style="{width: progressPercent+'%'}">
             <div class="progress-thumb"></div>
           </div>
@@ -2699,6 +2741,7 @@
           class="lyric-lang-btn"
           :class="{active: showTranslation}"
           @click="showTranslation=!showTranslation"
+          v-if="!currentSong || !/[\u4e00-\u9fff]/.test(currentSong.name + ' ' + currentSong.artist)"
         >
           <i class="fas fa-globe"></i> 翻译
         </button>
@@ -2711,7 +2754,7 @@
               <img v-if="currentSong.cover" :src="currentSong.cover">
               <div v-else class="full-cover-placeholder"><i class="fas fa-music"></i></div>
             </div>
-            <div class="full-cover-tap-hint">点击查看歌词</div>
+            <div class="full-cover-tap-hint" v-if="isMobile">点击查看歌词</div>
           </div>
 
           <div class="full-song-info">
@@ -2729,7 +2772,14 @@
           </div>
 
           <div class="full-progress-section">
-            <div class="full-progress-bar" @click="seekToFull">
+            <div class="full-progress-bar"
+             @mousedown="startSeekFull"
+             @touchstart="startSeekFull"
+             @mousemove="onSeekMoveFull"
+             @touchmove="onSeekMoveFull"
+             @mouseup="endSeek"
+             @touchend="endSeek"
+             @mouseleave="endSeek">
               <div class="full-progress-fill" :style="{width: progressPercent+'%'}"></div>
             </div>
             <div class="full-time-row">
@@ -3012,6 +3062,8 @@ createApp({
     const pwdStrength = ref({ score: 0, pct: 0, color: '', label: '' });
     const showRomaji = ref(false);
     const showTranslation = ref(false);
+    const isMobile = ref(window.innerWidth <= 900);
+    window.addEventListener('resize', () => { isMobile.value = window.innerWidth <= 900; });
     const noAlbumAnim = ref(false);
     const showSettingsModal = ref(false);
 
@@ -3188,6 +3240,7 @@ createApp({
 
     // 导入
     const importUrl = ref('');
+    const importPlaylistName = ref('');
     const importLoading = ref(false);
     const importError = ref('');
     const importResult = ref(null);
@@ -3651,6 +3704,7 @@ createApp({
       if (audioEl.value) audioEl.value.volume = isMuted.value ? 0 : volume.value;
     };
 
+    let isSeeking = false;
     const seekTo = (e) => {
       if (!audioEl.value || !audioEl.value.duration) return;
       const rect = e.currentTarget.getBoundingClientRect();
@@ -3659,6 +3713,11 @@ createApp({
       audioEl.value.currentTime = ratio * audioEl.value.duration;
     };
 
+    // 进度条拖动支持
+    const startSeek = (e) => { isSeeking = true; seekTo(e); };
+    const onSeekMove = (e) => { if (!isSeeking) return; seekTo(e); };
+    const endSeek = () => { isSeeking = false; };
+
     const seekToFull = (e) => {
       if (!audioEl.value || !audioEl.value.duration) return;
       const rect = e.currentTarget.getBoundingClientRect();
@@ -3666,6 +3725,10 @@ createApp({
       const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
       audioEl.value.currentTime = ratio * audioEl.value.duration;
     };
+
+    // 全屏进度条拖动
+    const startSeekFull = (e) => { isSeeeking = true; seekToFull(e); };
+    const onSeekMoveFull = (e) => { if (isSeeking) seekToFull(e); };
 
     const setVolume = (e) => {
       const rect = e.currentTarget.getBoundingClientRect();
@@ -4080,6 +4143,18 @@ createApp({
       importUrl.value = '';
     };
 
+    // ===== 删除歌单 =====
+    const deletePlaylist = (plId) => {
+      if (!confirm('确定要删除这个歌单吗？')) return;
+      playlists.value = playlists.value.filter(pl => pl.id !== plId);
+      savePlaylists();
+      if (currentPlaylistId.value === plId) {
+        currentPlaylistId.value = null;
+        currentView.value = 'library';
+      }
+      showToast('歌单已删除');
+    };
+
     // ===== 播放列表 =====
     const openPlaylist = (pl) => {
       currentPlaylistId.value = pl.id;
@@ -4107,6 +4182,9 @@ createApp({
 
     // ===== 生命周期 =====
     onMounted(() => {
+      // 全局鼠标弹起事件：结束拖动
+      window.addEventListener('mouseup', endSeek);
+      window.addEventListener('touchend', endSeek);
       showLoginModal.value = false;
       loadData();
       testServer();
@@ -4141,7 +4219,7 @@ createApp({
       isLiked, toggleLike,
       playSong, playOnlineSong, clickOnlineResult,
       togglePlay, nextSong, prevSong, toggleLoop, toggleShuffle, toggleMute,
-      seekTo, seekToFull, setVolume, setVolumeFull, toggleCoverSpin, toggleLyricsMode,
+      seekTo, seekToFull, startSeek, onSeekMove, endSeek, setVolume, setVolumeFull, toggleCoverSpin, toggleLyricsMode,
       onTimeUpdate, onEnded, onLoaded, onAudioError,
       onSearchInput, doSearch, focusSearch,
       loadHotSongs, switchChartTab,
