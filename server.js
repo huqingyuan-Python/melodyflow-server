@@ -12,7 +12,7 @@ const path = require('path');
 const crypto = require('crypto');
 
 const PORT = process.env.PORT || 3000;
-const ROOT_DIR = path.join(__dirname, '..');
+const ROOT_DIR = __dirname;
 
 // ===== 用户系统（密码scrypt哈希，禁止明文存储）=====
 const USERS_FILE = path.join(__dirname, 'users.json');
